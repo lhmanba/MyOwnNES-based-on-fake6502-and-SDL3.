@@ -1,0 +1,8 @@
+E:/MyOwnProject/PureCNES/minines/build/CMakeFiles/minines.dir
+E:/MyOwnProject/PureCNES/minines/build/CMakeFiles/edit_cache.dir
+E:/MyOwnProject/PureCNES/minines/build/CMakeFiles/rebuild_cache.dir
+E:/MyOwnProject/PureCNES/minines/build/third_party/SDL/CMakeFiles/SDL3-shared.dir
+E:/MyOwnProject/PureCNES/minines/build/third_party/SDL/CMakeFiles/SDL3_test.dir
+E:/MyOwnProject/PureCNES/minines/build/third_party/SDL/CMakeFiles/SDL_uclibc.dir
+E:/MyOwnProject/PureCNES/minines/build/third_party/SDL/CMakeFiles/edit_cache.dir
+E:/MyOwnProject/PureCNES/minines/build/third_party/SDL/CMakeFiles/rebuild_cache.dir

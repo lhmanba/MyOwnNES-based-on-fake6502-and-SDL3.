@@ -1,0 +1,2 @@
+#pragma code_page(65001)
+1 /* CREATEPROCESS_MANIFEST_RESOURCE_ID */ 24 /* RT_MANIFEST */ "E:/MyOwnProject/PureCNES/minines/build/CMakeFiles/minines.dir/embed.manifest"
