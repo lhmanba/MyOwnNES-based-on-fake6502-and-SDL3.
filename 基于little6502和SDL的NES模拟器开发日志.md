@@ -2,7 +2,9 @@
 
 ## day 1
 
-目标：看到一个可缩放的256×240测试画面。
+### 目标：
+
+看到一个可缩放的256×240测试画面。
 
 当天必须理解：framebuffer只是一段按行排列的像素内存；SDL纹理负责把宿主内存送给 GPU，它不是 PPU。先用人工测试图验证显示链，可以确保以后黑屏时优先检查模拟核心，而不是怀疑窗口系统。
 
@@ -66,7 +68,7 @@
 
 ![image-20260916163837705](./%E5%9F%BA%E4%BA%8Elittle6502%E5%92%8CSDL%E7%9A%84NES%E6%A8%A1%E6%8B%9F%E5%99%A8%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%97.assets/image-20260916163837705.png)
 
-### 问题
+### 遇到的问题
 
 - 为什么要采用临近缩放？
   - 不用平滑插值，避免像素边缘被线性插值模糊
@@ -86,3 +88,118 @@
     ```
 
     自动复制SDL3.dll到minines目录
+
+### 补充实验
+
+- 四象图
+
+  更改fill_test_pattern![image-20260916224505580](./%E5%9F%BA%E4%BA%8Elittle6502%E5%92%8CSDL%E7%9A%84NES%E6%A8%A1%E6%8B%9F%E5%99%A8%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%97.assets/image-20260916224505580.png)
+
+```
+static void fill_test_pattern(void)
+{
+    for (int y = 0; y < NES_HEIGHT; ++y) {
+        for (int x = 0; x < NES_WIDTH; ++x) {
+
+            uint32_t color;
+
+            if (x < NES_WIDTH / 2 && y < NES_HEIGHT / 2) {
+                color = 0xFFFF0000;   // 红
+            }
+            else if (x >= NES_WIDTH / 2 && y < NES_HEIGHT / 2) {
+                color = 0xFF00FF00;   // 绿
+            }
+            else if (x < NES_WIDTH / 2 && y >= NES_HEIGHT / 2) {
+                color = 0xFF0000FF;   // 蓝
+            }
+            else {
+                color = 0xFFFFFFFF;   // 白
+            }
+
+            nes_framebuffer[y * NES_WIDTH + x] = color;
+        }
+    }
+}
+```
+
+- 移动的绿色方块
+  ![image-20260916233419678](./%E5%9F%BA%E4%BA%8Elittle6502%E5%92%8CSDL%E7%9A%84NES%E6%A8%A1%E6%8B%9F%E5%99%A8%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%97.assets/image-20260916233419678.png)
+
+```
+static void fill_test_pattern(uint16_t square_x)
+{
+    for (int y = 0; y < NES_HEIGHT; ++y) {
+        for (int x = 0; x < NES_WIDTH; ++x) {
+            nes_framebuffer[y*NES_WIDTH + x] = 0xFFFFFFFF;
+        }
+    }
+    for (int y = 100; y < 116; ++y)
+    {
+        for (int x = square_x; x < square_x + 16; ++x)
+        {
+            nes_framebuffer[y * NES_WIDTH + x] = 0xFF00FF00;
+        }
+    }
+}
+```
+
+## day2
+
+目标：正确打印 NROM的元数据并能读取复位向量。
+
+当天必须理解：`.nes`文件不是可以从头顺序执行的程序。16字节头部描述后面 PRG/CHR数据的布局；Mapper决定 CPU和 PPU地址怎样转换为文件内偏移；Reset向量位于虚拟 CPU地址 `$FFFC/$FFFD`，必须经过 Mapper读取。
+
+- [x] 实现安全的16字节 iNES解析。
+- [x] 处理 Trainer。
+- [x] 加载 PRG和 CHR；CHR为0时创建 CHR RAM。
+- [x] 拒绝非 Mapper 0。
+- [x] 实现 NROM-128与 NROM-256 CPU映射。
+- [x] 实现 CHR ROM/RAM的 PPU映射。
+- [x] 打印 `$FFFC/$FFFD`形成的 Reset向量。
+
+### 学习到的点
+
+- nes文件
+  ![image-20260917081854522](./%E5%9F%BA%E4%BA%8Elittle6502%E5%92%8CSDL%E7%9A%84NES%E6%A8%A1%E6%8B%9F%E5%99%A8%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%97.assets/image-20260917081854522.png)
+
+  - PRG ROM
+    CPU执行游戏逻辑等的机器码
+  - CHR ROM
+    Tile图案，8x8像素，注意，NES一像素为2bit
+
+  - .nes`uint_8 h[16]`
+
+  | Offset | 意义                                                       |
+  | ------ | ---------------------------------------------------------- |
+  | `0~3`  | `N E S 0x1A`     用来确定这是一个nes文件                   |
+  | `4`    | PRG ROM 数量，每块 16 KiB    若h[4]=2,表明PRG有2*16=32字节 |
+  | `5`    | CHR ROM 数量，每块 8 KiB                                   |
+  | `6`    | Mirroring、Trainer、Mapper低4位等                          |
+  | `7`    | Mapper高4位等                                              |
+  | `8~15` | 其他/保留                                                  |
+
+- mapper
+  NES 本体的 CPU 和 PPU 能直接访问的地址空间有限，但很多游戏的 ROM 比这个空间大，所以卡带需要一种机制，把 ROM 的不同部分“切换”进当前可访问的地址范围。这个机制就是 Mapper。
+
+- h[6]&0x08=1 -> Four-screen
+  h[6]&0x1=1 -> Vertical
+  h[6]&0x1=0 -> Horizontal
+
+- CHR有两种情况：
+  - chr_size>0：卡带自带chrrom
+  - chr_size=0：卡带无chrrom 需要创建ram单独控制图块
+  
+- NEScpu是6502系列cpu，地址为16位，从\$0000~$FFFF
+
+  - 我们分配\$8000~$FFFF给mapper0的PRG rom
+
+### 成果图
+
+![image-20260917225025648](./%E5%9F%BA%E4%BA%8Elittle6502%E5%92%8CSDL%E7%9A%84NES%E6%A8%A1%E6%8B%9F%E5%99%A8%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%97.assets/image-20260917225025648.png)
+
+### 问题
+
+- 为什么不能把nes头转换为结构体而是直接解析字节？
+- 为什么32kib的prg不需要镜像而16kib的prg需要镜像？
+  - 因为 CPU 仍然可能去读高地址，尤其是Reset Vector 地址。
+

@@ -8,15 +8,17 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 add_subdirectory(third_party/SDL EXCLUDE_FROM_ALL)
 
-add_executable(minines src/main.c)
+add_executable(minines src/main.c src/cartridge.c src/mapper0.c)
 
 if(MSVC)
     target_compile_options(minines PRIVATE /W4)
+    add_compile_options(/utf-8)
 else()
     target_compile_options(minines PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
 target_link_libraries(minines PRIVATE SDL3::SDL3)
+target_include_directories(minines PRIVATE src)
 
 add_custom_command(TARGET minines POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
