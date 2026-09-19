@@ -145,7 +145,9 @@ static void fill_test_pattern(uint16_t square_x)
 
 ## day2
 
-目标：正确打印 NROM的元数据并能读取复位向量。
+### 目标：
+
+正确打印 NROM的元数据并能读取复位向量。
 
 当天必须理解：`.nes`文件不是可以从头顺序执行的程序。16字节头部描述后面 PRG/CHR数据的布局；Mapper决定 CPU和 PPU地址怎样转换为文件内偏移；Reset向量位于虚拟 CPU地址 `$FFFC/$FFFD`，必须经过 Mapper读取。
 
@@ -203,3 +205,39 @@ static void fill_test_pattern(uint16_t square_x)
 - 为什么32kib的prg不需要镜像而16kib的prg需要镜像？
   - 因为 CPU 仍然可能去读高地址，尤其是Reset Vector 地址。
 
+## day 3
+
+### 目标：
+
+CPU从 Reset向量持续执行，并可输出 trace。
+
+当天必须理解：CPU只产生地址读写，不直接认识 PPU和 ROM；总线是设备选择器。CPU执行结果和周期同等重要，trace中的“第一个差异”通常比最后的崩溃位置更接近根因。
+
+- [x] 加入 Fake6502及其许可证。
+- [x] 启用 NES CPU/禁用有效 BCD。
+- [x] 实现2 KB RAM和镜像。
+- [x] 实现 PPU寄存器占位访问。
+- [x] 映射 `$8000-$FFFF`到 Mapper 0。
+- [x] 调用 `reset6502()`并逐指令执行。
+- [x] 加入可开关 trace。
+
+![image-20260918211519988](./%E5%9F%BA%E4%BA%8Elittle6502%E5%92%8CSDL%E7%9A%84NES%E6%A8%A1%E6%8B%9F%E5%99%A8%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%97.assets/image-20260918211519988.png)
+
+### 学到的东西
+
+- 6502cpu的状态
+  A   Accumulator
+  X   X index register
+  Y   Y index register
+  SP  Stack Pointer
+  P   Processor Status
+  PC  Program Counter
+  - 其中P是一个8位状态寄存器
+    - bit 7  N   Negative
+      bit 6  V   Overflow
+      bit 5  常量位
+      bit 4  B   Break
+      bit 3  D   Decimal
+      bit 2  I   Interrupt Disable
+      bit 1  Z   Zero
+      bit 0  C   Carry
