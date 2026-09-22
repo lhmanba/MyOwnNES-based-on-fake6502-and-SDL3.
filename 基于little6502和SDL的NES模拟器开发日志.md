@@ -241,3 +241,19 @@ CPU从 Reset向量持续执行，并可输出 trace。
       bit 2  I   Interrupt Disable
       bit 1  Z   Zero
       bit 0  C   Carry
+
+## day4
+
+### 目标：
+
+CPU能通过 `$2000-$2007`正确读写 PPU内存。
+
+当天必须理解：CPU地址空间和 PPU地址空间彼此独立；`$2006/$2007`只是 CPU访问 PPU地址空间的窗口。寄存器读取可能有副作用，Name Table镜像来自物理显存地址线连接，不是画面水平/垂直翻转。
+
+- [x] 实现 PPU地址14位镜像。
+- [x] 实现水平/垂直 Name Table镜像。
+- [x] 实现 Palette镜像。
+- [x] 实现 `$2000-$2007`寄存器基本副作用。
+- [x] 实现 `v/t/fine_x/write_toggle/read_buffer`。
+- [x] 实现 OAM及 `$4014` DMA。
+- [x] 用日志确认 ROM向 Name Table和 Palette写入。

@@ -14,6 +14,8 @@ add_executable(minines
     src/mapper0.c
     src/bus.c
     src/cpu6502_adapter.c
+    src/ppu.c
+    src/nes.c
 )
 
 if(MSVC)
