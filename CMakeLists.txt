@@ -16,6 +16,7 @@ add_executable(minines
     src/cpu6502_adapter.c
     src/ppu.c
     src/nes.c
+    src/platform_sdl.c
 )
 
 if(MSVC)

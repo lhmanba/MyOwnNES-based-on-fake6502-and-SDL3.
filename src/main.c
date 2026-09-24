@@ -8,6 +8,7 @@
 #include "nes.h"
 #include "cpu6502_adapter.h"
 #include "ppu.h"
+#include "platform_sdl.h"
 
 #define NES_WIDTH 256
 #define NES_HEIGHT 240
@@ -157,6 +158,39 @@ int main(int argc, char *argv[])
     printf("OAM[80]=%02X\n",nes.ppu.oam[0x80]);
     printf("OAM[FF]=%02X\n",nes.ppu.oam[0xFF]);
     printf("DMA cycles=%llu\n",(unsigned long long)(nes.cpu_cycles - old_cycles));
+
+    //SDL程序开始
+    printf("before SDL create\n");
+    PlatformSdl *platform = platform_sdl_creat();
+    if(!platform)
+    {
+        fprintf(stderr, "platform_sdl_create failed\n");
+        return;
+    }
+    printf("SDL created\n");
+    bool running = true;
+    while(running)
+    {
+        printf("loop begin\n");
+        running=platform_sdl_poll(platform);
+        if(!running)
+        {
+            printf("poll requested quit\n");
+            break;
+        }
+        printf("before ppu render\n");
+        ppu_render_frame(&nes.ppu);
+        printf("after ppu render\n");
+        if(!platform_sdl_present(platform,nes.ppu.frame))
+        {
+            printf("present failed\n");
+            running=false;
+        }
+        printf("after present\n");
+    }
+    printf("leaving main loop\n");
+    platform_sdl_destroy(platform);
+    printf("SDL destroyed\n");
 
    return 0;
 }

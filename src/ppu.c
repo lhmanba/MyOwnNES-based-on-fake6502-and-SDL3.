@@ -1,6 +1,28 @@
 #include "ppu.h"
 #include "mapper0.h"
 
+static const uint32_t nes_palette[64] =
+{
+    0xFF757575u, 0xFF271B8Fu, 0xFF0000ABu, 0xFF47009Fu,
+    0xFF8F0077u, 0xFFAB0013u, 0xFFA70000u, 0xFF7F0B00u,
+    0xFF432F00u, 0xFF004700u, 0xFF005100u, 0xFF003F17u,
+    0xFF1B3F5Fu, 0xFF000000u, 0xFF000000u, 0xFF000000u,
+
+    0xFFBCBCBCu, 0xFF0073EFu, 0xFF233BEFu, 0xFF8300F3u,
+    0xFFBF00BFu, 0xFFE7005Bu, 0xFFDB2B00u, 0xFFCB4F0Fu,
+    0xFF8B7300u, 0xFF009700u, 0xFF00AB00u, 0xFF00933Bu,
+    0xFF00838Bu, 0xFF000000u, 0xFF000000u, 0xFF000000u,
+
+    0xFFFFFFFFu, 0xFF3FBFFFu, 0xFF5F97FFu, 0xFFA78BFDu,
+    0xFFF77BFFu, 0xFFFF77B7u, 0xFFFF7763u, 0xFFFF9B3Bu,
+    0xFFF3BF3Fu, 0xFF83D313u, 0xFF4FDF4Bu, 0xFF58F898u,
+    0xFF00EBDBu, 0xFF000000u, 0xFF000000u, 0xFF000000u,
+
+    0xFFFFFFFFu, 0xFFABE7FFu, 0xFFC7D7FFu, 0xFFD7CBFFu,
+    0xFFFFC7FFu, 0xFFFFC7DBu, 0xFFFFBFB3u, 0xFFFFDBABu,
+    0xFFFFE7A3u, 0xFFE3FFA3u, 0xFFABF3BFu, 0xFFB3FFCFu,
+    0xFF9FFFF3u, 0xFF000000u, 0xFF000000u, 0xFF000000u
+};
 
 static uint16_t mirror_nametable(const Cartridge*cart,uint16_t addr)
 {
@@ -205,4 +227,94 @@ void ppu_cpu_write(Ppu*ppu,uint8_t reg,uint8_t data)
         default: break;
     }
 }
+
+static uint8_t pattern_pixel(Ppu*ppu,uint8_t tile_id,uint8_t pixel_x,uint8_t pixel_y)
+{
+    uint16_t pattern_base=(ppu->ctrl & 0x10) ? 0x1000u : 0x0000u;
+    uint16_t tile_addr=(uint16_t)(pattern_base + (uint16_t)tile_id*16u + pixel_y);
+    uint8_t plane0=ppu_bus_read(ppu,tile_addr);
+    uint8_t plane1=ppu_bus_read(ppu,(uint16_t)(tile_addr+8u));
+    uint8_t bit=(uint8_t)(7u - (pixel_x & 7u));
+    uint8_t lo=(uint8_t)((plane0 >> bit) & 1u);
+    uint8_t hi=(uint8_t)((plane1 >> bit) & 1u);
+    return (uint8_t)(lo | (hi<<1));
+}
+
+static uint8_t background_pattern_pixel(Ppu*ppu,uint16_t x,uint16_t y)
+{
+    uint8_t tile_x=(uint8_t)(x/8u);
+    uint8_t tile_y=(uint8_t)(y/8u);
+    uint8_t fine_x=(uint8_t)(x & 7u);
+    uint8_t fine_y=(uint8_t)(y & 7u);
+
+    uint16_t nametable_base=0x2000u;
+
+    uint16_t nametable_addr=(uint16_t)(nametable_base + tile_y*32u + tile_x);
+    uint8_t tile_id=ppu_bus_read(ppu,nametable_addr);
+
+    return pattern_pixel(ppu,tile_id,fine_x,fine_y);
+}
+
+static uint8_t background_palette_group(Ppu*ppu,uint8_t tile_x,uint8_t tile_y)
+{
+    uint16_t name_table_base=0x2000u;
+    uint16_t attribute_addr=(uint16_t)(name_table_base+0x03C0u+(tile_y/4u)*8u+(tile_x/4u));
+    uint8_t attribute=ppu_bus_read(ppu,attribute_addr);
+    uint8_t shift=(uint8_t)(((tile_y & 2u) ? 4u:0u)+((tile_x & 2u) ? 2u:0u));
+    return (uint8_t)(attribute >> shift)&3u;
+}
+
+static uint8_t background_nes_color(Ppu*ppu,uint8_t pattern_color,uint8_t palette_group)
+{
+    uint16_t palette_addr;
+    if(pattern_color == 0)
+    {
+        palette_addr = 0x3F00u;
+    }
+    else
+    {
+        palette_addr=(uint16_t)(0x3F00u+(uint16_t)palette_group*4u + pattern_color);
+    }
+
+    return (uint8_t)(ppu_bus_read(ppu,palette_addr) & 0x3Fu);
+        
+}
+
+static uint8_t background_pixel_color(Ppu *ppu,uint16_t x,uint16_t y)
+{
+    uint8_t tile_x=(uint8_t)(x/8u);
+    uint8_t tile_y=(uint8_t)(y/8u);
+
+    uint8_t pattern_color=background_pattern_pixel(ppu,x,y);
+    uint8_t palette_group=background_palette_group(ppu,tile_x,tile_y);
+
+    return background_nes_color(ppu,pattern_color,palette_group);
+}
+
+static uint32_t nes_color_to_argb(uint8_t color)
+{
+    return nes_palette[color & 0x3Fu];
+}
+
+static void render_background(Ppu *ppu)
+{
+    for(uint16_t y=16;y<240u;++y)
+    {
+        for(uint16_t x=0;x<256u;++x)
+        {
+            uint8_t nes_color=background_pixel_color(ppu,x,y);
+            uint32_t argb=nes_color_to_argb(nes_color);
+
+            ppu->frame[y*256u+x]=argb;
+        }
+    }
+}
+void ppu_render_frame(Ppu *ppu)
+{
+    render_background(ppu);
+}
+
+
+
+
 

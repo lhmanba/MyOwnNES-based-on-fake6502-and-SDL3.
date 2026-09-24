@@ -44,3 +44,4 @@ void ppu_cpu_write(Ppu*ppu,uint8_t reg,uint8_t value);
 
 uint8_t ppu_cpu_read(Ppu*ppu,uint8_t reg);
 
+void ppu_render_frame(Ppu *ppu);

@@ -257,3 +257,19 @@ CPU能通过 `$2000-$2007`正确读写 PPU内存。
 - [x] 实现 `v/t/fine_x/write_toggle/read_buffer`。
 - [x] 实现 OAM及 `$4014` DMA。
 - [x] 用日志确认 ROM向 Name Table和 Palette写入。
+
+## day5
+
+### 目标：
+
+把 PPU内存解释为可见画面。
+
+当天必须理解：NES背景不是位图，而是 Name Table指定 Tile、Pattern Table提供2位像素、Attribute Table选择调色板组、Palette RAM选择最终颜色。精灵来自另一条 OAM管线，最终才与背景按透明度和优先级合成。
+
+- [x] 添加来源明确的64色 ARGB表。
+- [x] 实现 Pattern Table位平面解码。
+- [x] 实现 Name Table和 Attribute Table背景渲染。
+- [x] 实现水平/垂直滚屏的基础版本。
+- [x] 实现8×8精灵、透明、翻转和优先级。
+- [x] 将 framebuffer上传 SDL纹理。
+
