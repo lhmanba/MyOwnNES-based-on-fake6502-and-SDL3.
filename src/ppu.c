@@ -309,10 +309,46 @@ static void render_background(Ppu *ppu)
         }
     }
 }
+
+void ppu_tick(Ppu *ppu)
+{
+    ++ppu->dot;
+    if(ppu->dot >= 341)
+    {
+        ppu->dot=0;
+        ++ppu->scanline;
+        if(ppu->scanline >= 262)
+        {
+            ppu->scanline=0;
+        }
+    }
+    if(ppu->scanline == 241 &&  ppu->dot==1)
+    {
+        ppu->status |= 0x80u;
+        if(ppu->ctrl & 0x80u)
+        {
+            ppu->nmi_pending = true;
+        }
+    }
+    if(ppu->scanline == 261 && ppu->dot==1)
+    {
+        ppu->status &= (uint8_t)~0xE0u;
+    }
+}
+
 void ppu_render_frame(Ppu *ppu)
 {
     render_background(ppu);
 }
+
+void ppu_reset(Ppu *ppu)
+{
+    Cartridge *cart=ppu->cart;
+    memset(ppu,0,sizeof(*ppu));
+    ppu->cart=cart;
+}
+
+
 
 
 

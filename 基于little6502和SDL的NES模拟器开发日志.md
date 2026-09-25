@@ -270,6 +270,21 @@ CPU能通过 `$2000-$2007`正确读写 PPU内存。
 - [x] 实现 Pattern Table位平面解码。
 - [x] 实现 Name Table和 Attribute Table背景渲染。
 - [x] 实现水平/垂直滚屏的基础版本。
-- [x] 实现8×8精灵、透明、翻转和优先级。
+- [ ] 实现8×8精灵、透明、翻转和优先级。
 - [x] 将 framebuffer上传 SDL纹理。
 
+## day6
+
+### 目标：
+
+画面会更新，键盘能操作。
+
+当天必须理解：SDL帧率只是宿主展示速度；游戏的“每帧”来自 PPU进入 VBlank并触发 NMI。手柄也不是8个可随机读取的寄存器，而是先锁存快照，再按固定顺序逐位读出的串行设备。
+
+- [x] 实现 scanline/dot计数。
+- [x] 在241行 dot 1设置 VBlank并按 PPUCTRL触发 NMI。
+- [x] 在 pre-render行清状态。
+- [x] CPU每周期推进3个 PPU dot。
+- [x] 实现 `$4016` strobe和移位读取。
+- [x] 映射方向键、Z/X、Enter、右Shift。
+- [x] 加入60 Hz节拍。

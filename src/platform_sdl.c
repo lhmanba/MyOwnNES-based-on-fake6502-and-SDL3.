@@ -48,7 +48,7 @@ PlatformSdl *platform_sdl_creat(void)
     return platform;
 }
 
-bool platform_sdl_poll(PlatformSdl *platform)
+bool platform_sdl_poll(PlatformSdl *platform,Controller *pad)
 {
     (void)platform;
 
@@ -61,6 +61,53 @@ bool platform_sdl_poll(PlatformSdl *platform)
             return false;
         }
     }
+    const bool *keys=SDL_GetKeyboardState(NULL);
+    uint8_t buttons=0;
+        if (keys[SDL_SCANCODE_X])
+        buttons |= BUTTON_A;
+
+    if (keys[SDL_SCANCODE_Z])
+        buttons |= BUTTON_B;
+
+    if (keys[SDL_SCANCODE_RSHIFT])
+        buttons |= BUTTON_SEL;
+
+    if (keys[SDL_SCANCODE_RETURN])
+        buttons |= BUTTON_STA;
+
+    if (keys[SDL_SCANCODE_UP])
+        buttons |= BUTTON_UP;
+
+    if (keys[SDL_SCANCODE_DOWN])
+        buttons |= BUTTON_DOWN;
+
+    if (keys[SDL_SCANCODE_LEFT])
+        buttons |= BUTTON_LEFT;
+
+    if (keys[SDL_SCANCODE_RIGHT])
+        buttons |= BUTTON_RIGHT;
+
+    /*
+     * Up + Down 同时按下 → 两个都取消
+     */
+    if ((buttons & BUTTON_UP) &&
+        (buttons & BUTTON_DOWN))
+    {
+        buttons &= (uint8_t)~(
+            BUTTON_UP | BUTTON_DOWN);
+    }
+
+    /*
+     * Left + Right 同时按下 → 两个都取消
+     */
+    if ((buttons & BUTTON_LEFT) &&
+        (buttons & BUTTON_RIGHT))
+    {
+        buttons &= (uint8_t)~(
+            BUTTON_LEFT | BUTTON_RIGHT);
+    }
+
+    pad->buttons = buttons;
     return true;
 }
 

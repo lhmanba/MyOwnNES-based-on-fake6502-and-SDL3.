@@ -1,5 +1,6 @@
 #include "nes.h"
 #include "bus.h"
+#include <string.h>
 
 void nes_oam_dma(Nes*nes,uint8_t page)
 {
@@ -11,4 +12,13 @@ void nes_oam_dma(Nes*nes,uint8_t page)
     }
 
     nes->cpu_cycles+=513;
+}
+
+void nes_reset(Nes*nes)
+{
+    memset(nes->ram,0,sizeof(nes->ram));
+    ppu_reset(&nes->ppu);
+    controller_reset(&nes->pad1);
+    nes->cpu_cycles=0;
+    cpu6502_reset();
 }

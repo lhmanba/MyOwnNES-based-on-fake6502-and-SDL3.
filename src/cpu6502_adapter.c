@@ -1,6 +1,6 @@
 #include "cpu6502_adapter.h"
 #include "bus.h"
-
+#include "nes.h"
 #include <assert.h>
 #include <stdint.h>
 
@@ -21,11 +21,6 @@ uint8 read6502(ushort address)
 void write6502(ushort address,uint8 value)
 {
     bus_write(g_nes,(uint16_t)address,(uint8_t)value);
-}
-
-void cpu6502_reset(void)
-{
-    reset6502();
 }
 
 uint32_t cpu6502_step(void)
@@ -52,4 +47,27 @@ Cpu6502state cpu6502_get_state(void)
     state.p=(uint8_t)status;
 
     return state;
+}
+
+uint32_t cpu6502_step_and_sync(Nes*nes)
+{
+    uint32_t cpu_cycles = step6502();
+
+    nes->cpu_cycles += cpu_cycles;
+    for(uint32_t i=0;i<cpu_cycles*3u;++i)
+    {
+        ppu_tick(&nes->ppu);
+    }
+    if(nes->ppu.nmi_pending)
+    {
+        nes->ppu.nmi_pending=false;
+        nmi6502();
+    }
+
+    return cpu_cycles;
+}
+
+void cpu6502_reset(void)
+{
+    reset6502();
 }

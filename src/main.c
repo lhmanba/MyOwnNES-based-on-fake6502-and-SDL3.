@@ -9,9 +9,12 @@
 #include "cpu6502_adapter.h"
 #include "ppu.h"
 #include "platform_sdl.h"
+#include "controller.h"
 
 #define NES_WIDTH 256
 #define NES_HEIGHT 240
+#define CPU_HZ 1789773.0
+#define FPS 60.0988
 //定义一个静态的帧缓冲区，用于存储NES游戏的像素数据。帧缓冲区的大小为NES_WIDTH * NES_HEIGHT，即256 * 240个像素点，每个像素点使用32位无符号整数表示颜色值。
 static uint32_t nes_framebuffer[NES_WIDTH * NES_HEIGHT];
 static const char*mirror_name(MirrorMode mirror)
@@ -169,31 +172,47 @@ int main(int argc, char *argv[])
     }
     printf("SDL created\n");
     bool running = true;
+    static const double CYCLES_PER_FRAME= CPU_HZ / FPS;
+    double cycle_budget=0.0;
+    uint64_t perf_freq=SDL_GetPerformanceFrequency();
+    uint64_t next_titck=SDL_GetPerformanceCounter();
     while(running)
     {
-        printf("loop begin\n");
-        running=platform_sdl_poll(platform);
+        running=platform_sdl_poll(platform,&nes.pad1);
+        printf("MAIN pad=%p buttons=%02X\n",(void *)&nes.pad1,nes.pad1.buttons);
         if(!running)
         {
-            printf("poll requested quit\n");
             break;
         }
-        printf("before ppu render\n");
+        cycle_budget += CYCLES_PER_FRAME;//增加cpu周期预算
+        while(cycle_budget > 0)
+        {
+            uint32_t used = cpu6502_step_and_sync(&nes);
+            cycle_budget -= used;
+        }
+        //cpu运行差不多一帧
         ppu_render_frame(&nes.ppu);
-        printf("after ppu render\n");
         if(!platform_sdl_present(platform,nes.ppu.frame))
         {
-            printf("present failed\n");
             running=false;
+            break;
         }
-        printf("after present\n");
+        next_titck += perf_freq/60u;
+        uint64_t now = SDL_GetPerformanceCounter();
+        if(next_titck > now)
+        {
+            double ms=(double)(next_titck-now)*1000.0/(double)perf_freq;
+            SDL_Delay((uint32_t)ms);
+        }
+        else if(now-next_titck > perf_freq/4u)
+        {
+            next_titck=now;
+        } 
     }
-    printf("leaving main loop\n");
     platform_sdl_destroy(platform);
-    printf("SDL destroyed\n");
 
    return 0;
 }
 
 //cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
-//.\build\minines .\roms\Fine.nes
+//.\build\minines .\roms\Fine.nes 

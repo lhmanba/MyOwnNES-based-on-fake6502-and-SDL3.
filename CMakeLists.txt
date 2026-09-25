@@ -17,6 +17,7 @@ add_executable(minines
     src/ppu.c
     src/nes.c
     src/platform_sdl.c
+    src/controller.c
 )
 
 if(MSVC)

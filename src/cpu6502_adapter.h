@@ -1,6 +1,7 @@
 #pragma once
+#include <stdint.h>
+struct  Nes;
 
-#include "nes.h"
 
 typedef struct Cpu6502state
 {
@@ -14,12 +15,14 @@ typedef struct Cpu6502state
     uint8_t p;
 }Cpu6502state;
 
-void cpu6502_bind(Nes *nes);
-
-void cpu6502_reset(void);
+void cpu6502_bind(struct Nes *nes);
 
 uint32_t cpu6502_step(void);
 
 uint16_t cpu6502_get_pc(void);
 
 Cpu6502state cpu6502_get_state(void);
+
+uint32_t cpu6502_step_and_sync(struct Nes *nes);
+
+void cpu6502_reset(void);
