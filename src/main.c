@@ -67,6 +67,7 @@ int main(int argc, char *argv[])
    printf("Reset Vector: 0x%04X\n", reset_vector);
 
    cpu6502_reset();
+   /*
    printf("CPU PC after reset:%04X\n",cpu6502_get_pc());
    printf("--Below is trace--\n");
    bool trace_enable = true;
@@ -81,10 +82,7 @@ int main(int argc, char *argv[])
 
         cpu6502_step();
     }
-
     printf("--PPU TEST START--\n");
-
-    /*
     Ppu ppu={0};
     ppu.cart=&nes.cart;
     ppu_bus_write(&ppu,0x2005,0x42);
@@ -103,7 +101,7 @@ int main(int argc, char *argv[])
     printf("read=%02X status=%02X toggle=%d ",result,nes.ppu.status,nes.ppu.write_toggle);
     nes.ppu.status = 0x80;
     printf("$200A=%02X\n",bus_read(&nes,0x200A));
-    */
+    
     printf("--Test Scroll Data--\n");
     nes.ppu.t=0;
     nes.ppu.fine_x=0;
@@ -161,7 +159,7 @@ int main(int argc, char *argv[])
     printf("OAM[80]=%02X\n",nes.ppu.oam[0x80]);
     printf("OAM[FF]=%02X\n",nes.ppu.oam[0xFF]);
     printf("DMA cycles=%llu\n",(unsigned long long)(nes.cpu_cycles - old_cycles));
-
+    */
     //SDL程序开始
     printf("before SDL create\n");
     PlatformSdl *platform = platform_sdl_creat();
@@ -179,7 +177,6 @@ int main(int argc, char *argv[])
     while(running)
     {
         running=platform_sdl_poll(platform,&nes.pad1);
-        printf("MAIN pad=%p buttons=%02X\n",(void *)&nes.pad1,nes.pad1.buttons);
         if(!running)
         {
             break;

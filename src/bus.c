@@ -8,10 +8,9 @@ uint8_t bus_read(Nes *nes, uint16_t addr)
     {
         return nes->ram[addr &0x07FFu];//二进制为 0000 0111 1111 1111，表示取低11位，这么做可以实现2KB的RAM镜像映射到0x0000-0x1FFF地址范围。
     }
-
     if(addr <= 0x3FFF)
     {
-        return ppu_cpu_read(&nes->ppu,addr&7u);//&7是因为ppu只对cpu暴露8个寄存器
+        return ppu_cpu_read(&nes->ppu, addr & 7u);
     }
     if(addr == 0x4016)
     {

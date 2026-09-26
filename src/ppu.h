@@ -31,6 +31,9 @@ typedef struct Ppu
     int dot;
 
     bool nmi_pending;
+    bool sprite0_hit_valid;
+    uint16_t sprite0_hit_x;
+    uint16_t sprite0_hit_y;
 
     uint32_t frame[256*240];
 

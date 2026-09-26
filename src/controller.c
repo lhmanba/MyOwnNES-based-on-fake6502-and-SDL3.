@@ -1,4 +1,5 @@
 #include "controller.h"
+#include <stdio.h>
 
 void controller_reset(Controller *pad)
 {
@@ -25,7 +26,13 @@ uint8_t controller_read(Controller *pad)
     }
 
     uint8_t bit=pad->shift & 1u;
-    printf("4016 read: %u\n", bit);
+    
+    if (pad->buttons != 0)
+    {
+        printf("%u ", bit);
+    }
+
+
     if(!pad->strobe)
     {
         pad->shift=(uint8_t)((pad->shift >> 1) | 0x80u);
